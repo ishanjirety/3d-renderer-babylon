@@ -1,0 +1,8 @@
+.App {
+  font-family: sans-serif;
+  text-align: center;
+}
+:root {
+  touch-action: pan-x pan-y;
+  height: 100% 
+}
