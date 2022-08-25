@@ -44,7 +44,7 @@ const WithModel = (props) => {
   };
 
   const link = useRef();
-  const [model, setModel] = useState({ url: "", extension: "" });
+  const [model, setModel] = useState({ url: "/teddy_bear_3d_scan (1).glb", extension: ".glb" });
   const [zoom, setZoom] = useState(5)
 
   const [scene, setScene] = useState(null)
@@ -103,7 +103,7 @@ const WithModel = (props) => {
     groundMaterial.gridRatio = 2
     ground.material = groundMaterial;
     ground.updateFacetData();
-
+    ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, scene);
 
     //SkyBox
     var skybox = BABYLON.MeshBuilder.CreateBox("skyBox", { size: 1000.0 }, scene);
@@ -116,13 +116,13 @@ const WithModel = (props) => {
     skybox.material = skyboxMaterial;
 
     // Camera
-    const camera = new BABYLON.ArcRotateCamera("camera1", 3 * Math.PI / 2, - Math.PI / 2, 50, Vector3.Zero(), scene);
-    camera.lowerRadiusLimit = 1;
-    camera.upperRadiusLimit = 20;
+    const camera = new BABYLON.ArcRotateCamera("camera1", -Math.PI / 2, Math.PI / 2, 50, Vector3.Zero(), scene);
+    camera.lowerRadiusLimit = 0.2;
+    camera.upperRadiusLimit = 5;
     camera.position = new Vector3(0, 1, 5)
     camera.minZ = 0.001
     camera.maxZ = 10000000
-    camera.wheelPrecision = 50
+    camera.wheelPrecision = 70
     camera.rotation = 1
     camera.useFramingBehavior = true;
 
@@ -131,6 +131,7 @@ const WithModel = (props) => {
 
     camera.attachControl(canvas, true)
 
+    scene.enablePhysics()
     scene.getEngine().runRenderLoop(() => {
       if (scene) {
         scene.render();
@@ -281,16 +282,13 @@ const ScaledModelWithProgress = (props) => {
   function exampleLoad(newMeshes) {
     setTimeout(() => {
       let scene = props.scene
-      console.log(scene)
-      const someMeshFromTheArrayOfMeshes = scene.meshes[0];
-      someMeshFromTheArrayOfMeshes.setBoundingInfo(totalBoundingInfo(scene.meshes));
-      console.log(totalBoundingInfo(scene.meshes))
+      const someMeshFromTheArrayOfMeshes = newMeshes[0];
+      someMeshFromTheArrayOfMeshes.setBoundingInfo(totalBoundingInfo(newMeshes));
       //uncomment bellow to visually see bounding box 
       someMeshFromTheArrayOfMeshes.showBoundingBox = true;
       const es = someMeshFromTheArrayOfMeshes.getBoundingInfo().boundingBox.extendSize;
       // //get full WxHxD values
-      const es_scaled = es.scale(4);
-      console.log(es_scaled)
+      const es_scaled = es.scale(2);
       // //now you have the dimension of the bounding box
       const width = es_scaled.x;
       const height = es_scaled.y;
@@ -309,15 +307,18 @@ const ScaledModelWithProgress = (props) => {
       // //position the box 
       parentBox.position = new Vector3(center.x, center.y, center.z);
       // //hhide the box
-      parentBox.isVisible = true;
+      parentBox.isVisible = false;
 
       // //parent everything in the scene to the box         
       for (const mesh of newMeshes) {
         mesh.setParent(parentBox);
       }
 
+      // Physics not 
+      parentBox.physicsImpostor = new BABYLON.PhysicsImpostor(parentBox, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 1, restitution: 0.9 }, scene);
+
       //position the box in the 0 0 0 after parenting (if you want)
-      // parentBox.position = Vector3.Zero();
+      parentBox.position = Vector3.Zero();
       //normalize the cube to 1x1x1;
       parentBox.normalizeToUnitCube(true)
       parentBox.computeWorldMatrix(true);
@@ -342,7 +343,7 @@ const ScaledModelWithProgress = (props) => {
       }
     >
       <Model
-        scaleToDimension={props.scaleTo}
+        // scaleToDimension={props.scaleTo}
         onLoadProgress={(evt) => {
           let modelLoadProgress = evt.lengthComputable
             ? evt.loaded / evt.total
@@ -353,10 +354,7 @@ const ScaledModelWithProgress = (props) => {
         }}
         onModelLoaded={(model) => {
           setLoadProgress(1);
-          // onSceneLoaded(model.meshes)
           exampleLoad(model.meshes)
-          // props.camera.setTarget(model.rootMesh)
-          // model.meshes[1].setPo
           if (props.onModelLoaded) {
             props.onModelLoaded(model);
           }
